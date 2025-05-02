@@ -1,2 +1,3 @@
-output.png
+*.png
 cmake-build-debug
+.idea

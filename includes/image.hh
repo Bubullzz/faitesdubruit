@@ -1,4 +1,5 @@
 #pragma once
+#include "color3.hh"
 #include "../libz/stb_image_write.h"
 
 class Image {
@@ -40,5 +41,13 @@ public:
 
     void save(const char *filename) override {
         stbi_write_png(filename, width, height, 3, image, width * 3);
+    }
+
+    void set_color(const int x, const int y, const Color3 &color) {
+        int pos = y * width + x;
+        image[3 * pos + 0] = color.r;
+        image[3 * pos + 1] = color.g;
+        image[3 * pos + 2] = color.b;
+        return;
     }
 };

@@ -38,8 +38,3 @@ Color_Image gradient(const BW_Image &in, std::vector<unsigned char> thresholds, 
   }
   return result;
 }
-
-unsigned char add_offset_then_pow(unsigned char v, double offset, double pow) {
-  double vf = (double)v / 255 + offset;
-  return (unsigned char) std::clamp((int)(std::pow(vf, pow) * 255), 0, 255);
-}

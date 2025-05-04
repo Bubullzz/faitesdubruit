@@ -44,7 +44,17 @@ public:
     BW_Image operator*(float f);
     BW_Image operator<(float f);
     BW_Image operator>(float f);
+
+    /** normalizes everything in [0, 1]
+     * adds offset so that some of them are > 1
+     * put it to pow so that values > 1 get bigger and < 1 get smaller
+     * put it back into [0, 255] **/
+    BW_Image increase_contrast(double offset, double pow);
+
+    /** Should probably not be used
+    * let's talk if it feels like it's needed **/
     BW_Image apply_fun(std::function<unsigned char(unsigned char)> func);
+
 };
 
 class Color_Image final : public Image {

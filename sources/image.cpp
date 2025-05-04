@@ -93,9 +93,18 @@ BW_Image BW_Image::operator>(float f)
     return result;
 }
 
+BW_Image BW_Image::increase_contrast(double offset, double pow) {
+    BW_Image result(this->width, this->height);
+    for (int i = 0; i < this->width * this->height; i++) {
+        double vf = (double)this->image[i] / 255 + offset;
+        result.image[i] = std::clamp((int)(std::pow(vf, pow) * 255), 0, 255);
+    }
+    return result;
+}
+
 BW_Image BW_Image::apply_fun(std::function<unsigned char(unsigned char)> func) {
     BW_Image result(this->width, this->height);
     for (int i = 0; i < this->width * this->height; i++)
-        result.image[i] = (unsigned char)func(this->image[i]);
+        result.image[i] = func(this->image[i]);
     return result;
 }

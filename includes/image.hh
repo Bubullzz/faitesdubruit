@@ -31,6 +31,15 @@ public:
     void save(const char *filename) override {
         stbi_write_png(filename, width, height, 1, image, width);
     }
+
+    BW_Image negative();
+    BW_Image max(const BW_Image &other);
+    BW_Image min(const BW_Image &other);
+    BW_Image add(const BW_Image &other);
+    BW_Image sub(const BW_Image &other);
+    BW_Image mean(const BW_Image &other);
+    BW_Image clamp(unsigned char min, unsigned char max);
+    BW_Image operator*(float f);
 };
 
 class Color_Image final : public Image {

@@ -22,9 +22,18 @@ BW_Image Voronoi(int width, int height, int nb_points) {
     }
 
     BW_Image image = BW_Image(width, height);
+    float max_distance = 0;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            image[y * width + x] = closest(Vec2(x, y), points);
+            float f = closest(Vec2(x, y), points);
+            if (f > max_distance) {
+                max_distance = f;
+            }
+        }
+    }
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            image[y * width + x] = closest(Vec2(x, y), points) / max_distance * 255;
         }
     }
     return image;

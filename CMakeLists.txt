@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(SOURCES
         main.cpp
         sources/voronoi.cpp
+        sources/image.cpp
         sources/functions.cpp
         sources/protfolio.cpp
         libz/stb_image_write_bindings.cpp

@@ -2,6 +2,8 @@
 #include "color3.hh"
 #include "../libz/stb_image_write.h"
 
+#include <functional>
+
 class Image {
 public:
     int width, height;
@@ -40,6 +42,9 @@ public:
     BW_Image mean(const BW_Image &other);
     BW_Image clamp(unsigned char min, unsigned char max);
     BW_Image operator*(float f);
+    BW_Image operator<(float f);
+    BW_Image operator>(float f);
+    BW_Image apply_fun(std::function<unsigned char(unsigned char)> func);
 };
 
 class Color_Image final : public Image {

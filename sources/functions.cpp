@@ -1,5 +1,6 @@
 #include "../includes/functions.hh"
 
+#include <cmath>
 #include <cassert>
 
 Color3 get_color_interpolated(unsigned char pixel_value, unsigned char low, unsigned char high, Color3 low_color,
@@ -38,3 +39,9 @@ Color_Image gradient(const BW_Image &in, std::vector<unsigned char> thresholds, 
   return result;
 }
 
+unsigned char add_offset_then_exp(unsigned char v) {
+  double offset = 0.1;
+  double vf = (double)v / 255;
+  vf += offset;
+  return (unsigned char) (std::clamp((int)(std::pow(vf, 3.5) * 255), 0, 255));
+}

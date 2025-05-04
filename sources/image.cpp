@@ -1,6 +1,7 @@
 #include "../includes/image.hh"
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 BW_Image BW_Image::negative()
 {
@@ -46,7 +47,7 @@ BW_Image BW_Image::sub(const BW_Image &other)
     assert(this->height == other.height);
     BW_Image result(this->width, this->height);
     for (int i = 0; i < this->width * this->height; i++)
-        result.image[i] = std::clamp(this->image[i] - other.image[i], 0, 255);
+        result.image[i] = std::abs(this->image[i] - other.image[i]);
     return result;
 }
 
@@ -73,5 +74,28 @@ BW_Image BW_Image::operator*(float f)
     BW_Image result(this->width, this->height);
     for (int i = 0; i < this->width * this->height; i++)
         result.image[i] = this->image[i] * f;
+    return result;
+}
+
+BW_Image BW_Image::operator<(float f)
+{
+    BW_Image result(this->width, this->height);
+    for (int i = 0; i < this->width * this->height; i++)
+        result.image[i] = this->image[i] < f ? this->image[i] : 0;
+    return result;
+}
+
+BW_Image BW_Image::operator>(float f)
+{
+    BW_Image result(this->width, this->height);
+    for (int i = 0; i < this->width * this->height; i++)
+        result.image[i] = this->image[i] > f ? this->image[i] : 0;
+    return result;
+}
+
+BW_Image BW_Image::apply_fun(std::function<unsigned char(unsigned char)> func) {
+    BW_Image result(this->width, this->height);
+    for (int i = 0; i < this->width * this->height; i++)
+        result.image[i] = (unsigned char)func(this->image[i]);
     return result;
 }

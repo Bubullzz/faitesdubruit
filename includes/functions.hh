@@ -14,3 +14,5 @@
  * it is assumed thresholds starts with 0 and ends with 255
  **/
 Color_Image gradient(const BW_Image &in, std::vector<unsigned char> thresholds, std::vector<Color3> colors);
+
+unsigned char add_offset_then_exp(unsigned char v);

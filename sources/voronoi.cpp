@@ -15,10 +15,13 @@ float closest(Vec2 current, const std::vector<Vec2> &points) {
 }
 
 BW_Image Voronoi(int width, int height, int nb_points) {
+    // offset so that it's like there are points "outside" the screen
+    int w_offset = width / 10;
+    int h_offset = height / 10;
     std::vector<Vec2> points = std::vector<Vec2>(nb_points);
     for (int i = 0; i < nb_points; i++) {
-        points[i].x = random_float(0, width);
-        points[i].y = random_float(0, height);
+        points[i].x = random_float(0, width + w_offset);
+        points[i].y = random_float(0, height + h_offset);
     }
 
     BW_Image image = BW_Image(width, height);

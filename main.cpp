@@ -8,6 +8,7 @@
 #include <ctime>
 
 int main() {
-    caustics();
+    giraffe();
+
 }
 

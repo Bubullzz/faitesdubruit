@@ -34,7 +34,7 @@ void giraffe() {
         srand(time(NULL));
     int width = 1024;
     int height = 1024;
-    BW_Image vor1 = voronoi_edges(width, height,25, 10);
+    BW_Image vor1 = voronoi_edges(width, height,25, 25);
     std::vector<unsigned char> thresholds = {0, 1, 254, 255};
     std::vector<Color3> colors = {Color3::fromHex("#6F4A38"), Color3::fromHex("#6F4A38"),Color3::fromHex("EDCF8F"),  Color3::fromHex("EDCF8F")};
     Color_Image grad = gradient(vor1, thresholds, colors);

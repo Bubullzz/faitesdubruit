@@ -2,6 +2,7 @@
 
 #include "../includes/image.hh"
 #include "../includes/voronoi.hh"
+#include "../includes/perlin.hh"
 #include "../includes/functions.hh"
 #include "../includes/color3.hh"
 
@@ -39,4 +40,16 @@ void giraffe() {
     std::vector<Color3> colors = {Color3::fromHex("#6F4A38"), Color3::fromHex("#6F4A38"),Color3::fromHex("EDCF8F"),  Color3::fromHex("EDCF8F")};
     Color_Image grad = gradient(vor1, thresholds, colors);
     grad.save("../portfolio/giraffe.png");
+}
+
+void classic_perlin() {
+    int SEED = 1;
+    if (SEED == 0)
+        SEED = time(NULL);
+    int width = 512;
+    int height = 512;
+    BW_Image perl = perlin(width, height, SEED);
+    perl.save("/var/home/dluca/CLionProjects/faitesdubruit/perlin.png");
+
+
 }

@@ -43,13 +43,13 @@ void giraffe() {
 }
 
 void classic_perlin() {
-    int SEED = 1;
+    int SEED = 0;
     if (SEED == 0)
         SEED = time(NULL);
     int width = 512;
     int height = 512;
     BW_Image perl = perlin(width, height, SEED);
-    perl.save("/var/home/dluca/CLionProjects/faitesdubruit/perlin.png");
+    perl.save("../portfolio/perlin.png");
 
 
 }

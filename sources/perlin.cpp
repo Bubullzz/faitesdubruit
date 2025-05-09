@@ -50,21 +50,7 @@ double noise_grad(int hash, float x, float y) {
 // Revisited from the original implementation
 // https://mrl.cs.nyu.edu/~perlu/noise
 // I took some logic from the naive Perlin implementation
-float upgraded_perlin_noise(float x, float y, int seed) {
-
-    // IMPORTANT FOR LATER UPDATE OF CODE:
-    // THIS IMPLEMENTATION DOES NOT NEED TO RECOMPUTE p AT EACH PIXEL!!!!!
-    // THE CODE SHOULD BE MOVED ELSEWHERE
-
-    // Hash table of pseudo random gradients
-    std::vector<int> p;
-    p.resize(256);
-    for (int i = 0; i < 256; i++) {
-        p[i] = i;
-    }
-    std::default_random_engine generator(seed);
-    std::shuffle(p.begin(), p.end(), generator);
-
+float upgraded_perlin_noise(float x, float y, std::vector<int> ptable) {
 
     int X = static_cast<int>(std::floor(x));
     int Y = static_cast<int>(std::floor(y));
@@ -77,10 +63,10 @@ float upgraded_perlin_noise(float x, float y, int seed) {
     float distRight = x_unit - 1; // x - (X + 1)
     float distTop = y_unit - 1; // y - (Y + 1)
 
-    int hashBottomLeft = p[(p[X % 256] + Y) % 256];
-    int hashBottomRight = p[(p[(X + 1) % 256] + Y) % 256];
-    int hashTopLeft = p[(p[X % 256] + Y + 1) % 256];
-    int hashTopRight = p[(p[(X + 1) % 256] + Y + 1) % 256];
+    int hashBottomLeft = ptable[(ptable[X % 256] + Y) % 256];
+    int hashBottomRight = ptable[(ptable[(X + 1) % 256] + Y) % 256];
+    int hashTopLeft = ptable[(ptable[X % 256] + Y + 1) % 256];
+    int hashTopRight = ptable[(ptable[(X + 1) % 256] + Y + 1) % 256];
 
     // Instead of generating random gradient, we will use
     // some predefined gradient (using hashes) for smoothness and less noise (more coherent)
@@ -129,14 +115,14 @@ float perlin_noise(float x, float y, int seed) {
     return lerp(i1, i2, fade(y_unit));
 }
 
-float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence, int seed) {
+float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence, const std::function<float(float, float)>& perlin_noise) {
     float total = 0.0f;
     float max = 0.0f;
 
     for (int i = 0; i < octaves; i++) {
         float fx = static_cast<float>(x) * frequency;
         float fy = static_cast<float>(y) * frequency;
-        total += upgraded_perlin_noise(fx, fy, seed) * amplitude;
+        total += perlin_noise(fx, fy) * amplitude;
         max += amplitude;
         amplitude *= persistence;
         frequency *= 2;
@@ -147,10 +133,26 @@ float perlin_octave(int x, int y, float frequency, float amplitude, int octaves,
 
 BW_Image perlin(int width, int height, int seed) {
 
+    std::vector<int> p;
+    p.resize(256);
+    for (int i = 0; i < 256; i++) {
+        p[i] = i;
+    }
+    std::default_random_engine generator(seed);
+    std::shuffle(p.begin(), p.end(), generator);
+
+    auto upgraded_noise = [&p](float fx, float fy) {
+    return upgraded_perlin_noise(fx, fy, p);
+    };
+
+    auto naive_noise = [seed](float fx, float fy) {
+    return perlin_noise(fx, fy, seed);
+    };
+
     BW_Image image = BW_Image(width, height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-              float perlin_noise = perlin_octave(x, y, 0.01, 1.0f, 3, 0.5, seed);
+              float perlin_noise = perlin_octave(x, y, 0.01, 1.0f, 1, 0.5, naive_noise);
               perlin_noise = 255.0f * (perlin_noise + 1.0f) / 2.0f;
               image[y * width + x] = static_cast<int>(perlin_noise);
         }

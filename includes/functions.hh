@@ -14,3 +14,4 @@
  * it is assumed thresholds starts with 0 and ends with 255
  **/
 Color_Image gradient(const BW_Image &in, std::vector<unsigned char> thresholds, std::vector<Color3> colors);
+Color_Image color_cut(const BW_Image &in, const std::vector<unsigned char> &thresholds, const std::vector<Color3> &colors);

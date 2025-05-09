@@ -131,7 +131,7 @@ float perlin_octave(int x, int y, float frequency, float amplitude, int octaves,
 }
 
 
-BW_Image perlin(int width, int height, int seed) {
+BW_Image perlin(int width, int height, float frequency, float amplitude, int octaves, float persistence, int seed) {
 
     std::vector<int> p;
     p.resize(256);
@@ -149,13 +149,23 @@ BW_Image perlin(int width, int height, int seed) {
     return perlin_noise(fx, fy, seed);
     };
 
+    // Bretzel_ — 16:30
     BW_Image image = BW_Image(width, height);
+    std::vector<float> noise_got;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-              float perlin_noise = perlin_octave(x, y, 0.01, 1.0f, 1, 0.5, naive_noise);
-              perlin_noise = 255.0f * (perlin_noise + 1.0f) / 2.0f;
-              image[y * width + x] = static_cast<int>(perlin_noise);
+            float perlin_noise = perlin_octave(x, y, frequency, amplitude, octaves, persistence, naive_noise);
+            noise_got.push_back(perlin_noise);
         }
     }
+
+    float max_val = *std::max_element(noise_got.begin(), noise_got.end());
+    float min_val = *std::min_element(noise_got.begin(), noise_got.end());
+
+    for (int i = 0; i < noise_got.size(); i++) {
+        float norm = (noise_got[i] - min_val) / (max_val - min_val);
+        image[i] = static_cast<int>(norm * 255.0f);
+    }
+
     return image;
 }

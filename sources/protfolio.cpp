@@ -18,11 +18,13 @@ void caustics() {
         srand(time(NULL));
     int width = 1024;
     int height = 1024;
-    BW_Image vor1 = voronoi(width, height,80) * 0.7;
-    BW_Image vor2 = voronoi(width, height,80) * 0.3;
+    BW_Image vor1 = voronoi(width, height, 80) * 0.7;
+    BW_Image vor2 = voronoi(width, height, 80) * 0.3;
     BW_Image caustiques_bw = vor1.add(vor2).increase_contrast(0.1, 3.5);
     std::vector<unsigned char> thresholds = {0, 1, 150, 255};
-    std::vector<Color3> colors = {Color3::fromHex("#006dd5"), Color3::fromHex("#006dd5"),Color3::fromHex("ffffff"),  Color3::fromHex("ffffff")};
+    std::vector<Color3> colors = {
+        Color3::fromHex("#006dd5"), Color3::fromHex("#006dd5"), Color3::fromHex("ffffff"), Color3::fromHex("ffffff")
+    };
     Color_Image grad = gradient(caustiques_bw, thresholds, colors);
     grad.save("../portfolio/caustics.png");
 }
@@ -35,21 +37,51 @@ void giraffe() {
         srand(time(NULL));
     int width = 1024;
     int height = 1024;
-    BW_Image vor1 = voronoi_edges(width, height,25, 25);
+    BW_Image vor1 = voronoi_edges(width, height, 25, 25);
     std::vector<unsigned char> thresholds = {0, 1, 254, 255};
-    std::vector<Color3> colors = {Color3::fromHex("#6F4A38"), Color3::fromHex("#6F4A38"),Color3::fromHex("EDCF8F"),  Color3::fromHex("EDCF8F")};
+    std::vector<Color3> colors = {
+        Color3::fromHex("#6F4A38"), Color3::fromHex("#6F4A38"), Color3::fromHex("EDCF8F"), Color3::fromHex("EDCF8F")
+    };
     Color_Image grad = gradient(vor1, thresholds, colors);
     grad.save("../portfolio/giraffe.png");
 }
 
-void classic_perlin() {
-    int SEED = 0;
-    if (SEED == 0)
-        SEED = time(NULL);
-    int width = 512;
-    int height = 512;
-    BW_Image perl = perlin(width, height, SEED);
-    perl.save("../portfolio/perlin.png");
 
+void game_map() {
+    int SEED = 7;
+    std::srand(SEED);
+    if (SEED == 0) {
+        srand(time(NULL));
+        SEED = rand() ;
+    }
+    int width = 1024;
+    int height = 1024;
+    BW_Image per = perlin(width, height, 0.003, 1.0, 3, 0.3, SEED);
+    std::vector<unsigned char> thresholds = {0, 70, 120, 150, 180, 215, 240}; //, 70, 200, 240, 255};
+    std::vector<Color3> colors = {
+        Color3::fromHex("#0f5e9c"), // Water Deep
+        Color3::fromHex("#1ca3ec"), // Water Shallow
+        Color3::fromHex("#EBE7CD"), // sand
+        Color3::fromHex("#62760C"), // grass
+        Color3::fromHex("#5c3b04"), // brown
+        Color3::fromHex("#CBBCB1"), // mountain grey
+        Color3::fromHex("#F2EFEA"), // mountain white
+    };
 
+    std::vector<Color3> colors_biome_lavender = {
+        Color3::fromHex("#573b88"), // Water Deep
+        Color3::fromHex("#834ba0"), // Water Shallow
+        Color3::fromHex("#ad5fad"), // sand
+        Color3::fromHex("#ce78b3"), // grass
+        Color3::fromHex("#e597b9"), // brown
+        Color3::fromHex("#f2b9c4"), // mountain grey
+        Color3::fromHex("#f9ddda"), // mountain white
+    };
+    Color_Image cut = color_cut(per, thresholds, colors);
+    Color_Image cut_lavender = color_cut(per, thresholds, colors_biome_lavender);
+    cut.save("../portfolio/map.png");
+    cut_lavender.save("../portfolio/map_lavender.png");
+    per.save("../portfolio/tmp.png");
 }
+
+

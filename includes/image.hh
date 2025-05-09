@@ -3,22 +3,21 @@
 #include "../libz/stb_image_write.h"
 
 #include <functional>
+#include <memory>
 
 class Image {
 public:
     int width, height;
-    unsigned char *image;
+    std::shared_ptr<unsigned char[]> image;
 
     Image(const int width, const int height) : width(width), height(height), image(nullptr) {
     }
 
 
-    virtual ~Image() {
-        delete[] image;
-    }
+    virtual ~Image() = default;
 
     unsigned char& operator[](const int index) const {
-        return image[index];
+        return image.get()[index];
     }
 
     virtual void save(const char *filename) = 0;
@@ -27,11 +26,11 @@ public:
 class BW_Image final : public Image {
 public:
     BW_Image(const int width, const int height) : Image(width, height) {
-        image = new unsigned char[width * height];
+        image = std::make_shared<unsigned char[]>(width * height);
     }
 
     void save(const char *filename) override {
-        stbi_write_png(filename, width, height, 1, image, width);
+        stbi_write_png(filename, width, height, 1, image.get(), width);
     }
 
     BW_Image negative();
@@ -60,18 +59,23 @@ public:
 class Color_Image final : public Image {
 public:
     Color_Image(const int width, const int height) : Image(width, height) {
-        image = new unsigned char[width * height * 3];
+        image = std::make_shared<unsigned char[]>(width * height * 3);
     }
 
     void save(const char *filename) override {
-        stbi_write_png(filename, width, height, 3, image, width * 3);
+        stbi_write_png(filename, width, height, 3, image.get(), width * 3);
     }
 
     void set_color(const int x, const int y, const Color3 &color) {
         int pos = y * width + x;
-        image[3 * pos + 0] = color.r;
-        image[3 * pos + 1] = color.g;
-        image[3 * pos + 2] = color.b;
+        image.get()[3 * pos + 0] = color.r;
+        image.get()[3 * pos + 1] = color.g;
+        image.get()[3 * pos + 2] = color.b;
         return;
+    }
+
+    Color3 get_color(const int x, const int y) {
+        int pos = y * width + x;
+        return Color3(image.get()[3 * pos], image.get()[3 * pos + 1], image.get()[3 * pos + 2]);
     }
 };

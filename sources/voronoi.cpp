@@ -3,7 +3,7 @@
 #include "../includes/utils.hh"
 
 #include <vector>
-
+#include <utility>
 float closest(Vec2 current, const std::vector<Vec2> &points) {
     float min_distance = std::numeric_limits<float>::max();
     for (const Vec2 &v: points) {
@@ -12,6 +12,19 @@ float closest(Vec2 current, const std::vector<Vec2> &points) {
             min_distance = distance;
     }
     return clamp(min_distance, 0, 255);
+}
+
+unsigned char closest_label(Vec2 current, const std::vector<Vec2> &points) {
+    float min_distance = std::numeric_limits<float>::max();
+    unsigned char label = 0;
+    for (const Vec2 &v: points) {
+        float distance = current.distance(v);
+        if (distance < min_distance) {
+            min_distance = distance;
+            label = std::hash<unsigned char>()(std::hash<unsigned char>()(v.x) * std::hash<unsigned char>()(v.y));
+        }
+    }
+    return label;
 }
 
 float closestDifference(Vec2 current, const std::vector<Vec2>& points) {
@@ -92,6 +105,23 @@ BW_Image voronoi_edges(int width, int height, int nb_points, int edge_size) {
         for (int x = 0; x < width; x++) {
             float closests_diff = closestDifference(Vec2(x, y), points);
             image[y * width + x] = closests_diff < edge_size ? 255 : 0;
+        }
+    }
+    return image;
+}
+
+BW_Image voronoi_zone(const int width, const int height, const int nb_points) {
+    int w_offset = width / 10;
+    int h_offset = height / 10;
+    std::vector<Vec2> points = std::vector<Vec2>(nb_points);
+    for (int i = 0; i < nb_points; i++) {
+        points[i].x = random_float(0, width + w_offset);
+        points[i].y = random_float(0, height + h_offset);
+    }
+    BW_Image image = BW_Image(width, height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            image[y * width + x] = closest_label(Vec2(x, y), points);
         }
     }
     return image;

@@ -8,16 +8,26 @@
 
 
 int main() {
-    game_map();
-    int SEED = 0;
+    int SEED = 1;
     std::srand(SEED);
     if (SEED == 0) {
         srand(time(NULL));
         SEED = rand() ;
     }
-    int width = 1024;
-    int height = 1024;
-
+    int width = 512;
+    int height = 512;
+    int module = 6;
+    int nb_neighbours = 2;
+    Voronoi v = Voronoi(width, height, SEED, 8.);
+    BW_Image im = v.get_closest_distance_map();
+    BW_Image im2 = v.get_closest_label_map(module);
+    BW_Image im3 = v.get_blended_labels_sharp(nb_neighbours, module);
+    BW_Image im4 = v.get_blended_labels_smooth(nb_neighbours, module);
+    im.save("../ez.png");
+    im2.save("../ez2.png");
+    im3.save("../ez3.png");
+    im4.save("../ez4.png");
+    return 0;
     int nb_points = width * height;
     BW_Image per = perlin(width, height, 0.005, 1.0, 3, 0.3, SEED);
 

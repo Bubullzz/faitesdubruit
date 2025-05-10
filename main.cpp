@@ -8,7 +8,7 @@
 
 
 int main() {
-    int SEED = 1;
+    int SEED = 0;
     std::srand(SEED);
     if (SEED == 0) {
         srand(time(NULL));
@@ -16,68 +16,102 @@ int main() {
     }
     int width = 512;
     int height = 512;
-    int module = 6;
-    int nb_neighbours = 2;
-    Voronoi v = Voronoi(width, height, SEED, 8.);
-    BW_Image im = v.get_closest_distance_map();
-    BW_Image im2 = v.get_closest_label_map(module);
-    BW_Image im3 = v.get_blended_labels_sharp(nb_neighbours, module);
-    BW_Image im4 = v.get_blended_labels_smooth(nb_neighbours, module);
-    im.save("../ez.png");
-    im2.save("../ez2.png");
-    im3.save("../ez3.png");
-    im4.save("../ez4.png");
-    return 0;
-    int nb_points = width * height;
-    BW_Image per = perlin(width, height, 0.005, 1.0, 3, 0.3, SEED);
+    int nb_neighbours = 3;
+    double power = 8;
+    int voronoi_factor = 3;
+    float frequency_perlin = 0.01; // Higher = unzoom;
+    bool smooth = true;
+    Voronoi v = Voronoi(width, height, SEED, voronoi_factor);
+    v.get_blended_labels_smooth(8, 2).save("../smooth_label.png");
+    BW_Image per = perlin(width, height, frequency_perlin, 1.0, 3, 0.3, SEED);
 
     std::vector<Color3> colors_biome_basic = {
-        Color3::fromHex("#0f5e9c"), // Water Deep
-        Color3::fromHex("#1ca3ec"), // Water Shallow
-        Color3::fromHex("#EBE7CD"), // sand
-        Color3::fromHex("#62760C"), // grass
-        Color3::fromHex("#5c3b04"), // brown
-        Color3::fromHex("#CBBCB1"), // mountain grey
-        Color3::fromHex("#F2EFEA"), // mountain white
+        Color3::fromHex("#0c4875"), // Water Deep
+        Color3::fromHex("#136c9c"), // Water Shallow
+        Color3::fromHex("#4d3f27"), // sand
+        Color3::fromHex("#6b5734"), // idf
+        Color3::fromHex("#947848"), // brown
+        Color3::fromHex("#b59762"), // mountain grey
+        Color3::fromHex("#c9ad7d"), // mountain white
     };
 
     std::vector<Color3> colors_biome_lavender = {
-        Color3::fromHex("#f9ddda"), // Water Deep
-        Color3::fromHex("#f2b9c4"), // Water Shallow
-        Color3::fromHex("#e597b9"), // sand
+        Color3::fromHex("#3e2a61"), // Water Deep
+        Color3::fromHex("#633878"), // Water Shallow
+        Color3::fromHex("#ad5fad"), // sand
         Color3::fromHex("#ce78b3"), // grass
-        Color3::fromHex("#ad5fad"), // brown
-        Color3::fromHex("#834ba0"), // mountain grey
-        Color3::fromHex("#573b88"), // mountain white
+        Color3::fromHex("#e597b9"), // brown
+        Color3::fromHex("#f2b9c4"), // mountain grey
+        Color3::fromHex("#f9ddda"), // mountain white
+    };
+
+    std::vector<Color3> colors_biome_nether = {
+        Color3::fromHex("#381414"), // Water Deep
+        Color3::fromHex("#541616"), // Water Shallow
+        Color3::fromHex("#8a2424"), // sand
+        Color3::fromHex("#b32e2e"), // grass
+        Color3::fromHex("#b32e2e"), // brown
+        Color3::fromHex("#e63c3c"), // mountain grey
+        Color3::fromHex("#f74040"), // mountain white
+    };
+
+    std::vector<Color3> colors_biome_swamp = {
+        Color3::fromHex("#062740"), // Water Deep
+        Color3::fromHex("#093d3d"), // Water Shallow
+        Color3::fromHex("#1e381f"), // sand
+        Color3::fromHex("#2e5730"), // grass
+        Color3::fromHex("#396b45"), // brown
+        Color3::fromHex("#789c80"), // mountain grey
+        Color3::fromHex("#a3d4ae"), // mountain white
     };
 
     std::vector<unsigned char> thresholds = {0, 70, 120, 150, 180, 215, 240};
 
     std::vector all_color_biomes = {
-        colors_biome_basic, colors_biome_lavender
+        colors_biome_basic, colors_biome_lavender, colors_biome_nether, colors_biome_swamp
     };
-
-    int w_offset = width / 10;
-    int h_offset = height / 10;
-    std::vector<Vec2> points = std::vector<Vec2>(nb_points);
-    for (int i = 0; i < nb_points; i++) {
-        points[i].x = random_float(0, width + w_offset);
-        points[i].y = random_float(0, height + h_offset);
-    }
 
     std::vector<Color_Image> full_images = {};
     for (size_t i = 0; i < all_color_biomes.size(); ++i) {
         full_images.push_back(std::move(color_cut(per, thresholds, all_color_biomes[i])));
     }
 
-    int size = full_images.size();
+    double epsilon = 0.0001;
+    int nb_biome = full_images.size();
     Color_Image final = Color_Image(width, height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
+            NClosest close = v.get_n_closest(x, y, nb_neighbours);
+            double curr_r = 0;
+            double curr_g = 0;
+            double curr_b = 0;
+            float tot_weight = 0;
+            std::vector<float> label_proba(nb_biome);
+            for (int i = 0; i < close.distances.size(); i++) {
+                int curr_label = close.labels[i] % nb_biome;
+                Color3 curr_color = full_images[curr_label].get_color(x,y);
+                float weight = 1.0f / (std::pow(close.distances[i], power) + epsilon);
+                tot_weight += weight;
+                curr_r += weight * curr_color.r;
+                curr_g += weight * curr_color.g;
+                curr_b += weight * curr_color.b;
+                label_proba[curr_label] += weight;
+            }
+            for (int i = 0; true; i = (i + 1) % nb_biome) {
+                float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                if (r < label_proba[i] / tot_weight) {
+                    final.set_color(x,y, full_images[i].get_color(x,y));
+                    break;
+                }
+            }
+            if (smooth)
+                final.set_color(x,y,Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight));
         }
     }
 
-    final.save("../lucas.png");
+    full_images[0].save("../lucas.png");
+    full_images[1].save("../lucas1.png");
+    final.save("../final.png");
     return 0;
 }
 

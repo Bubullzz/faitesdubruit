@@ -235,16 +235,25 @@ BW_Image Voronoi::get_blended_labels_sharp(int num_neighbours_checked, int num_l
 }
 
 BW_Image Voronoi::get_blended_labels_smooth(int num_neighbours_checked, int num_labels_modulo) {
+    double power = 2;
+    double epsilon = 0.0001;
     BW_Image im = BW_Image(base_width, base_height);
     for (int y = 0; y < base_height; y++) {
         for (int x = 0; x < base_width; x++) {
             NClosest result = get_n_closest(x, y, num_neighbours_checked);
+            int curr_r = 0;
+            double curr_g = 0;
+            double curr_b = 0;
+            float tot_weight = 0;
             for (int i = 0; i < result.distances.size(); i++) {
-                float k = 2.;
                 int curr_label = result.labels[i] % num_labels_modulo;
-                float weight = std::exp(-k * result.distances[i]);
-                im[y * base_width + x] = std::clamp(0, 255, (int)im[y * base_width + x] + (int)(curr_label * weight * 255 / num_labels_modulo));
+                int curr_color = curr_label * (255 / num_labels_modulo);
+                float weight = 1.0f / (std::pow(result.distances[i], power) + epsilon);
+                tot_weight += weight;
+                curr_r += weight * curr_color;
             }
+            im[y * base_width + x] = curr_r / tot_weight;
+
         }
     }
     return im;

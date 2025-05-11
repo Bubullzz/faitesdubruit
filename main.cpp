@@ -23,6 +23,12 @@ int main() {
     Voronoi v = Voronoi(width, height, SEED, voronoi_factor);
     v.get_blended_labels_smooth(8, 2).save("../smooth_label.png");
     BW_Image per = perlin(width, height, frequency_perlin, 1.0, 3, 0.3, SEED);
+    BW_Image riv = worm_perlin(per, 8, 0.35, std::make_pair(71, 216), SEED);
+
+    for (int i = 0; i < width * height; i++) {
+        if (riv[i] != 0)
+            per[i] = riv[i];
+    }
 
     std::vector<Color3> colors_biome_basic = {
         Color3::fromHex("#0c4875"), // Water Deep

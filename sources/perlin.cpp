@@ -43,15 +43,12 @@ double noise_grad(int hash, float x, float y) {
         default:
             return 0; // for compiler
     }
-
-
 }
 
 // Revisited from the original implementation
 // https://mrl.cs.nyu.edu/~perlu/noise
 // I took some logic from the naive Perlin implementation
 float upgraded_perlin_noise(float x, float y, std::vector<int> ptable) {
-
     int X = static_cast<int>(std::floor(x));
     int Y = static_cast<int>(std::floor(y));
 
@@ -93,12 +90,12 @@ float perlin_noise(float x, float y, int seed) {
 
     Vec2 distBottomLeft = Vec2(x_unit, y_unit);
     Vec2 distBottomRight = Vec2(x_unit - 1.0f, y_unit); // x - (X + 1)
-    Vec2 distTopLeft = Vec2(x_unit, y_unit - 1.0f);  // y - (Y + 1)
+    Vec2 distTopLeft = Vec2(x_unit, y_unit - 1.0f); // y - (Y + 1)
     Vec2 distTopRight = Vec2(x_unit - 1.0f, y_unit - 1.0f); // x - (X + 1) && y - (Y + 1)
 
     Vec2 gradBottomLeft = generate_gradient(X, Y, seed);
     Vec2 gradBottomRight = generate_gradient(X + 1, Y, seed);
-    Vec2 gradTopLeft  = generate_gradient(X, Y + 1, seed);
+    Vec2 gradTopLeft = generate_gradient(X, Y + 1, seed);
     Vec2 gradTopRight = generate_gradient(X + 1, Y + 1, seed);
 
     // Bottom dot product between grad and dist
@@ -115,7 +112,8 @@ float perlin_noise(float x, float y, int seed) {
     return lerp(i1, i2, fade(y_unit));
 }
 
-float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence, const std::function<float(float, float)>& perlin_noise) {
+float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence,
+                    const std::function<float(float, float)> &perlin_noise) {
     float total = 0.0f;
     float max = 0.0f;
 
@@ -132,7 +130,6 @@ float perlin_octave(int x, int y, float frequency, float amplitude, int octaves,
 
 
 BW_Image perlin(int width, int height, float frequency, float amplitude, int octaves, float persistence, int seed) {
-
     std::vector<int> p;
     p.resize(256);
     for (int i = 0; i < 256; i++) {
@@ -142,11 +139,11 @@ BW_Image perlin(int width, int height, float frequency, float amplitude, int oct
     std::shuffle(p.begin(), p.end(), generator);
 
     auto upgraded_noise = [&p](float fx, float fy) {
-    return upgraded_perlin_noise(fx, fy, p);
+        return upgraded_perlin_noise(fx, fy, p);
     };
 
     auto naive_noise = [seed](float fx, float fy) {
-    return perlin_noise(fx, fy, seed);
+        return perlin_noise(fx, fy, seed);
     };
 
     // Bretzel_ — 16:30
@@ -168,4 +165,139 @@ BW_Image perlin(int width, int height, float frequency, float amplitude, int oct
     }
 
     return image;
+}
+
+std::vector<std::pair<int, int> > find_peaks(BW_Image height_map, int max_peaks, int height_threshold, int seed) {
+    std::vector<std::pair<int, int> > peaks;
+    int width = height_map.width;
+    int height = height_map.height;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (height_map[y * width + x] > height_threshold) {
+                peaks.emplace_back(x, y);
+            }
+        }
+    }
+
+    std::default_random_engine generator(seed);
+    std::shuffle(peaks.begin(), peaks.end(), generator);
+    if (peaks.size() > max_peaks) {
+        peaks.resize(max_peaks);
+    }
+
+    return peaks;
+}
+
+void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image variation, float wobbly,
+                 int height_threshold, int river_id, std::pair<int, int> last_point) {
+    std::pair<int, int> down_direction = last_point;
+    int width = height_map.width;
+    int height = height_map.height;
+
+    if (last_point.first < 0 || last_point.second < 0 || last_point.first >= width - 1 || last_point.second >= height - 1) {
+        return;
+    }
+
+    int current_index = last_point.second * width + last_point.first;
+
+    if (river_image[current_index] != 0 && river_image[current_index] != river_id) {
+        return;
+    }
+
+    int min_height = height_map[current_index];
+    river_image[current_index] = river_id;
+
+    if (min_height <= height_threshold) {
+        return;
+    }
+
+
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            if (x == 0 && y == 0) {
+                continue;
+            }
+
+            int dx = last_point.first + x;
+            int dy = last_point.second + y;
+
+            if (dx < 0 || dy < 0 || dx >= width || dy >= height) {
+                continue;
+            }
+
+            int neighbor_height = height_map[dy * width + dx];
+            if (neighbor_height < min_height) {
+                min_height = neighbor_height;
+                down_direction.first = dx;
+                down_direction.second = dy;
+            }
+        }
+    }
+
+    if (down_direction == last_point) {
+        return;
+    }
+
+    float noise = static_cast<float>(variation[down_direction.second * width + down_direction.first]) / 255.0f;
+    float noised_angle = noise * 2.0 * M_PI;
+
+    int down_x = down_direction.first - last_point.first;
+    int down_y = down_direction.second - last_point.second;
+
+    float direction_angle = std::atan2(down_y, down_x);
+
+    float bias = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
+
+    float perturbated_angle = direction_angle * (1 - wobbly) + (noised_angle + bias) * wobbly;
+    int angle_x = static_cast<int>(std::round(std::cos(perturbated_angle)));
+    int angle_y = static_cast<int>(std::round(std::sin(perturbated_angle)));
+
+    down_direction = {down_direction.first + angle_x, down_direction.second + angle_y};
+
+    if (down_direction == last_point) {
+        return;
+    }
+
+    if (down_direction.first < 0 || down_direction.second < 0 || down_direction.first >= width || down_direction.second
+        >= height) {
+        return;
+    }
+
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            int nx = down_direction.first + x;
+            int ny = down_direction.second + y;
+
+            if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+                river_image[ny * width + nx] = river_id;
+            }
+        }
+    }
+
+    return make_rivers(height_map, river_image, variation, wobbly, height_threshold, river_id, down_direction);
+}
+
+BW_Image worm_perlin(const BW_Image height_image, int max_points, float wobblyness,
+                     std::pair<int, int> height_threshold, int seed) {
+    // Returns the BW Image of rivers only
+
+    BW_Image river_image = BW_Image(height_image.width, height_image.height);
+    BW_Image perlin_river_variation = perlin(height_image.width, height_image.height, 0.1, 1.0, 4, 0.6, seed * 3);
+    std::vector<std::pair<int, int> > peaks = find_peaks(height_image, max_points, height_threshold.second, seed);
+
+    for (int i = peaks.size(); i > 0; i--) {
+        make_rivers(height_image, river_image, perlin_river_variation, wobblyness, height_threshold.first, i, peaks[i]);
+    }
+
+    for (int y = 0; y < height_image.height; y++) {
+        for (int x = 0; x < height_image.width; x++) {
+            int current_index = y * height_image.width + x;
+            if (river_image[current_index] != 0) {
+                river_image[current_index] = height_threshold.first;
+            }
+        }
+    }
+
+    return river_image;
 }

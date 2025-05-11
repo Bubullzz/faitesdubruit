@@ -12,15 +12,14 @@ int main() {
     std::srand(SEED);
     if (SEED == 0) {
         srand(time(NULL));
-        SEED = rand() ;
+        SEED = rand();
     }
     int width = 512;
     int height = 512;
     int nb_neighbours = 3;
-    double power = 8;
-    int voronoi_factor = 3;
-    float frequency_perlin = 0.01; // Higher = unzoom;
-    bool smooth = true;
+    double power = 11;
+    int voronoi_factor = 5;
+    float frequency_perlin = 0.025; // Higher = unzoom;
     Voronoi v = Voronoi(width, height, SEED, voronoi_factor);
     v.get_blended_labels_smooth(8, 2).save("../smooth_label.png");
     BW_Image per = perlin(width, height, frequency_perlin, 1.0, 3, 0.3, SEED);
@@ -36,8 +35,8 @@ int main() {
     };
 
     std::vector<Color3> colors_biome_lavender = {
-        Color3::fromHex("#3e2a61"), // Water Deep
-        Color3::fromHex("#633878"), // Water Shallow
+        Color3::fromHex("#0c4875"), // Water Deep
+        Color3::fromHex("#136c9c"), // Water Shallow
         Color3::fromHex("#ad5fad"), // sand
         Color3::fromHex("#ce78b3"), // grass
         Color3::fromHex("#e597b9"), // brown
@@ -46,8 +45,8 @@ int main() {
     };
 
     std::vector<Color3> colors_biome_nether = {
-        Color3::fromHex("#381414"), // Water Deep
-        Color3::fromHex("#541616"), // Water Shallow
+        Color3::fromHex("#292431"), // Water Deep
+        Color3::fromHex("#22577c"), // Water Shallow
         Color3::fromHex("#8a2424"), // sand
         Color3::fromHex("#b32e2e"), // grass
         Color3::fromHex("#b32e2e"), // brown
@@ -56,8 +55,8 @@ int main() {
     };
 
     std::vector<Color3> colors_biome_swamp = {
-        Color3::fromHex("#062740"), // Water Deep
-        Color3::fromHex("#093d3d"), // Water Shallow
+        Color3::fromHex("#0c4875"), // Water Deep
+        Color3::fromHex("#136c9c"), // Water Shallow
         Color3::fromHex("#1e381f"), // sand
         Color3::fromHex("#2e5730"), // grass
         Color3::fromHex("#396b45"), // brown
@@ -78,7 +77,8 @@ int main() {
 
     double epsilon = 0.0001;
     int nb_biome = full_images.size();
-    Color_Image final = Color_Image(width, height);
+    Color_Image dithered = Color_Image(width, height);
+    Color_Image smooth = Color_Image(width, height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             NClosest close = v.get_n_closest(x, y, nb_neighbours);
@@ -89,7 +89,7 @@ int main() {
             std::vector<float> label_proba(nb_biome);
             for (int i = 0; i < close.distances.size(); i++) {
                 int curr_label = close.labels[i] % nb_biome;
-                Color3 curr_color = full_images[curr_label].get_color(x,y);
+                Color3 curr_color = full_images[curr_label].get_color(x, y);
                 float weight = 1.0f / (std::pow(close.distances[i], power) + epsilon);
                 tot_weight += weight;
                 curr_r += weight * curr_color.r;
@@ -98,20 +98,20 @@ int main() {
                 label_proba[curr_label] += weight;
             }
             for (int i = 0; true; i = (i + 1) % nb_biome) {
-                float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
                 if (r < label_proba[i] / tot_weight) {
-                    final.set_color(x,y, full_images[i].get_color(x,y));
+                    dithered.set_color(x, y, full_images[i].get_color(x, y));
                     break;
                 }
             }
-            if (smooth)
-                final.set_color(x,y,Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight));
+            smooth.set_color(x, y, Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight));
         }
     }
 
     full_images[0].save("../lucas.png");
     full_images[1].save("../lucas1.png");
-    final.save("../final.png");
+    dithered.save("../ditherd.png");
+    smooth.save("../smooth.png");
     return 0;
 }
 

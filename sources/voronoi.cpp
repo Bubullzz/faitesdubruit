@@ -173,7 +173,7 @@ unsigned char Voronoi::get_closest_label(const int x, const int y) const {
             float dist = curr_point.distance(neigh_actual);
             if (dist < min_distance) {
                 min_distance = dist;
-                label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7))) * 0.5 + 0.5) * 255.);
+                unsigned char label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7) * SEED)) * 0.5 + 0.5) * 255.);
             }
         }
     }
@@ -208,7 +208,7 @@ NClosest Voronoi::get_n_closest(const int x, const int y, const int n){
             Vec2 neigh_actual = offset + neigh_uv;
             float dist = curr_point.distance(neigh_actual);
 
-            unsigned char label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7))) * 0.5 + 0.5) * 255.);
+            unsigned char label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7) * SEED)) * 0.5 + 0.5) * 255.);
 
             result.tryAdd(dist, label);
         }

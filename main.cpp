@@ -24,7 +24,7 @@ int main() {
     Voronoi v = Voronoi(width, height, SEED, voronoi_factor);
     v.get_blended_labels_smooth(8, 2).save("../smooth_label.png");
     BW_Image per = perlin(width, height, frequency_perlin, 1.0, 3, 0.3, SEED);
-    BW_Image riv = worm_perlin(per, river_count, 0.35, std::make_pair(119, 181), SEED);
+    BW_Image riv = worm_perlin(per, river_count, 0.35, std::make_pair(125, 210), SEED);
 
     std::vector<Color3> colors_biome_basic = {
         Color3::fromHex("#0c4875"), // Water Deep
@@ -47,7 +47,7 @@ int main() {
     };
 
     std::vector<Color3> colors_biome_nether = {
-        Color3::fromHex("#292431"), // Water Deep
+        Color3::fromHex("#302330"), // Water Deep
         Color3::fromHex("#22577c"), // Water Shallow
         Color3::fromHex("#8a2424"), // sand
         Color3::fromHex("#b32e2e"), // grass
@@ -57,8 +57,8 @@ int main() {
     };
 
     std::vector<Color3> colors_biome_swamp = {
-        Color3::fromHex("#0c4875"), // Water Deep
-        Color3::fromHex("#136c9c"), // Water Shallow
+        Color3::fromHex("#062b47"), // Water Deep
+        Color3::fromHex("#0a454e"), // Water Shallow
         Color3::fromHex("#1e381f"), // sand
         Color3::fromHex("#2e5730"), // grass
         Color3::fromHex("#396b45"), // brown
@@ -72,11 +72,26 @@ int main() {
         colors_biome_basic, colors_biome_lavender, colors_biome_nether, colors_biome_swamp
     };
 
+    std::vector all_color_rivers = {
+        Color3::fromHex("#136c9c"), Color3::fromHex("#fae8e6"), Color3::fromHex("#e6823c"), Color3::fromHex("#349e2b"),
+    };
+
     std::vector<Color_Image> full_images = {};
     for (size_t i = 0; i < all_color_biomes.size(); ++i) {
         full_images.push_back(std::move(color_cut(per, thresholds, all_color_biomes[i])));
     }
 
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (riv[y * width + x] != 0) {
+                for (int i = 0; i < all_color_rivers.size(); i++) {
+                    float blend_factor = 1;
+                    Color3 river_color = all_color_rivers[i];
+                    full_images[i].set_color(x, y, river_color);
+                }
+            }
+        }
+    }
     double epsilon = 0.0001;
     int nb_biome = full_images.size();
     Color_Image dithered = Color_Image(width, height);
@@ -107,11 +122,6 @@ int main() {
                 }
             }
             Color3 color = Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight);
-            if (riv[y * width + x] != 0) {
-                float blend_factor = 0.3;
-                Color3 river_color = Color3::fromHex("#136c9c");
-                color = Color3(blend_factor * river_color.r + color.r * (1 - blend_factor), blend_factor * river_color.g + color.g * (1 - blend_factor), blend_factor * river_color.b + color.b * (1 - blend_factor));
-            }
             smooth.set_color(x, y, color);
         }
     }

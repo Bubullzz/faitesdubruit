@@ -105,7 +105,7 @@ int main() {
             float tot_weight = 0;
             std::vector<float> label_proba(nb_biome);
             for (int i = 0; i < close.distances.size(); i++) {
-                int curr_label = close.labels[i] % nb_biome;
+                int curr_label = (close.labels[i] + SEED) % nb_biome;
                 Color3 curr_color = full_images[curr_label].get_color(x, y);
                 float weight = 1.0f / (std::pow(close.distances[i], power) + epsilon);
                 tot_weight += weight;

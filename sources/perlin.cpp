@@ -112,15 +112,14 @@ float perlin_noise(float x, float y, int seed) {
     return lerp(i1, i2, fade(y_unit));
 }
 
-float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence,
-                    const std::function<float(float, float)> &perlin_noise) {
+float perlin_octave(int x, int y, float frequency, float amplitude, int octaves, float persistence, int seed) {
     float total = 0.0f;
     float max = 0.0f;
 
     for (int i = 0; i < octaves; i++) {
         float fx = static_cast<float>(x) * frequency;
         float fy = static_cast<float>(y) * frequency;
-        total += perlin_noise(fx, fy) * amplitude;
+        total += perlin_noise(fx, fy, seed) * amplitude;
         max += amplitude;
         amplitude *= persistence;
         frequency *= 2;
@@ -138,20 +137,12 @@ BW_Image perlin(int width, int height, float frequency, float amplitude, int oct
     std::default_random_engine generator(seed);
     std::shuffle(p.begin(), p.end(), generator);
 
-    auto upgraded_noise = [&p](float fx, float fy) {
-        return upgraded_perlin_noise(fx, fy, p);
-    };
-
-    auto naive_noise = [seed](float fx, float fy) {
-        return perlin_noise(fx, fy, seed);
-    };
-
     // Bretzel_ — 16:30
     BW_Image image = BW_Image(width, height);
     std::vector<float> noise_got;
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            float perlin_noise = perlin_octave(x, y, frequency, amplitude, octaves, persistence, naive_noise);
+            float perlin_noise = perlin_octave(x, y, frequency, amplitude, octaves, persistence, seed);
             noise_got.push_back(perlin_noise);
         }
     }

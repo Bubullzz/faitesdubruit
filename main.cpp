@@ -14,21 +14,17 @@ int main() {
         srand(time(NULL));
         SEED = rand();
     }
-    int width = 512;
-    int height = 512;
+    int width = 1024;
+    int height = 1024;
     int nb_neighbours = 3;
     double power = 11;
     int voronoi_factor = 5;
+    int river_count = 200;
     float frequency_perlin = 0.025; // Higher = unzoom;
     Voronoi v = Voronoi(width, height, SEED, voronoi_factor);
     v.get_blended_labels_smooth(8, 2).save("../smooth_label.png");
     BW_Image per = perlin(width, height, frequency_perlin, 1.0, 3, 0.3, SEED);
-    BW_Image riv = worm_perlin(per, 8, 0.35, std::make_pair(71, 216), SEED);
-
-    for (int i = 0; i < width * height; i++) {
-        if (riv[i] != 0)
-            per[i] = riv[i];
-    }
+    BW_Image riv = worm_perlin(per, river_count, 0.35, std::make_pair(119, 181), SEED);
 
     std::vector<Color3> colors_biome_basic = {
         Color3::fromHex("#0c4875"), // Water Deep
@@ -110,7 +106,13 @@ int main() {
                     break;
                 }
             }
-            smooth.set_color(x, y, Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight));
+            Color3 color = Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight);
+            if (riv[y * width + x] != 0) {
+                float blend_factor = 0.3;
+                Color3 river_color = Color3::fromHex("#136c9c");
+                color = Color3(blend_factor * river_color.r + color.r * (1 - blend_factor), blend_factor * river_color.g + color.g * (1 - blend_factor), blend_factor * river_color.b + color.b * (1 - blend_factor));
+            }
+            smooth.set_color(x, y, color);
         }
     }
 

@@ -190,17 +190,25 @@ std::vector<std::pair<int, int> > find_peaks(BW_Image height_map, int max_peaks,
 }
 
 void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image variation, float wobbly,
-                 int height_threshold, int river_id, std::pair<int, int> last_point) {
+                 int height_threshold, int river_id, std::pair<int, int> last_point, int depth = 0) {
+
+    // Panic exit after too many recursion
+    // Can happen if river is stuck in a circle loop
+    if (depth == 100) {
+      return;
+    }
     std::pair<int, int> down_direction = last_point;
     int width = height_map.width;
     int height = height_map.height;
 
+    // Avoid river on border
     if (last_point.first < 0 || last_point.second < 0 || last_point.first >= width - 1 || last_point.second >= height - 1) {
         return;
     }
 
     int current_index = last_point.second * width + last_point.first;
 
+    // Merge two rivers from different ids
     if (river_image[current_index] != 0 && river_image[current_index] != river_id) {
         return;
     }
@@ -208,10 +216,10 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
     int min_height = height_map[current_index];
     river_image[current_index] = river_id;
 
+    // River at sea level
     if (min_height <= height_threshold) {
         return;
     }
-
 
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
@@ -229,12 +237,12 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
             int neighbor_height = height_map[dy * width + dx];
             if (neighbor_height < min_height) {
                 min_height = neighbor_height;
-                down_direction.first = dx;
-                down_direction.second = dy;
+                down_direction = {dx, dy};
             }
         }
     }
 
+    // River did not move (first check to avoid atan2 impossible value)
     if (down_direction == last_point) {
         return;
     }
@@ -245,25 +253,27 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
     int down_x = down_direction.first - last_point.first;
     int down_y = down_direction.second - last_point.second;
 
+    // Angle from direction
     float direction_angle = std::atan2(down_y, down_x);
 
     float bias = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
+    float biased_noised_angle = noised_angle + bias;
 
-    float perturbated_angle = direction_angle * (1 - wobbly) + (noised_angle + bias) * wobbly;
-    int angle_x = static_cast<int>(std::round(std::cos(perturbated_angle)));
-    int angle_y = static_cast<int>(std::round(std::sin(perturbated_angle)));
+    // Give directions (vector x and y perturbated)
+    float mix_dir_x = std::cos(direction_angle) * (1.0f - wobbly) + std::cos(biased_noised_angle) * wobbly;
+    float mix_dir_y = std::sin(direction_angle) * (1.0f - wobbly) + std::sin(biased_noised_angle) * wobbly;
+
+    int angle_x = static_cast<int>(std::round(mix_dir_x));
+    int angle_y = static_cast<int>(std::round(mix_dir_y));
 
     down_direction = {down_direction.first + angle_x, down_direction.second + angle_y};
 
+    // River did not move at all
     if (down_direction == last_point) {
         return;
     }
 
-    if (down_direction.first < 0 || down_direction.second < 0 || down_direction.first >= width || down_direction.second
-        >= height) {
-        return;
-    }
-
+    // Triple draw
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
             int nx = down_direction.first + x;
@@ -275,7 +285,7 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
         }
     }
 
-    return make_rivers(height_map, river_image, variation, wobbly, height_threshold, river_id, down_direction);
+    return make_rivers(height_map, river_image, variation, wobbly, height_threshold, river_id, down_direction, depth + 1);
 }
 
 BW_Image worm_perlin(const BW_Image height_image, int max_points, float wobblyness,
@@ -294,7 +304,7 @@ BW_Image worm_perlin(const BW_Image height_image, int max_points, float wobblyne
         for (int x = 0; x < height_image.width; x++) {
             int current_index = y * height_image.width + x;
             if (river_image[current_index] != 0) {
-                river_image[current_index] = height_threshold.first;
+                river_image[current_index] = 255;
             }
         }
     }

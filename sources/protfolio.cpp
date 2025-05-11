@@ -37,13 +37,39 @@ void giraffe() {
         srand(time(NULL));
     int width = 1024;
     int height = 1024;
+    float detail = 0.2;
     BW_Image vor1 = voronoi_edges(width, height, 25, 25);
+    BW_Image per = perlin(width, height, 0.05, 1.0, 4, 0.6, SEED);
+    per.save("../perlin.png");
+    std::vector<float> skin_normalized;
+
+    for (int i = 0; i < width * height; i++) {
+        float wb = static_cast<float>(per[i]) / 255.0;
+        skin_normalized.push_back(1.0 + detail * (wb - 0.5));
+    }
+
     std::vector<unsigned char> thresholds = {0, 1, 254, 255};
     std::vector<Color3> colors = {
         Color3::fromHex("#6F4A38"), Color3::fromHex("#6F4A38"), Color3::fromHex("EDCF8F"), Color3::fromHex("EDCF8F")
     };
     Color_Image grad = gradient(vor1, thresholds, colors);
-    grad.save("../portfolio/giraffe.png");
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (vor1[y * width + x] < 128) {
+                Color3 base = grad.get_color(x, y);
+                float factor = skin_normalized[y * width + x];
+
+                Color3 final(
+                    std::clamp(base.r * factor, 0.0f, 255.0f),
+                    std::clamp(base.g * factor, 0.0f, 255.0f),
+                    std::clamp(base.b * factor, 0.0f, 255.0f)
+                );
+                grad.set_color(x, y, final);
+            }
+        }
+    }
+    grad.save("../giraffe.png");
 }
 
 
@@ -52,7 +78,7 @@ void game_map() {
     std::srand(SEED);
     if (SEED == 0) {
         srand(time(NULL));
-        SEED = rand() ;
+        SEED = rand();
     }
     int width = 1024;
     int height = 1024;
@@ -83,5 +109,3 @@ void game_map() {
     cut_lavender.save("../portfolio/map_lavender.png");
     per.save("../portfolio/tmp.png");
 }
-
-

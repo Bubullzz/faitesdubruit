@@ -26,12 +26,12 @@ void caustics() {
         Color3::fromHex("#006dd5"), Color3::fromHex("#006dd5"), Color3::fromHex("ffffff"), Color3::fromHex("ffffff")
     };
     Color_Image grad = gradient(caustiques_bw, thresholds, colors);
-    vor1.save("../portfolio/caustics/voronoi_1.png");
-    vor2.save("../portfolio/caustics/voronoi_2.png");
-    vor1.add(vor2).save("../portfolio/caustics/combined_voronoi.png");
-    caustiques_bw.save("../portfolio/caustics/increased_contrast.png");
-    gradient(gradient_tester(), thresholds, colors).save("../portfolio/caustics/colors.png");
-    grad.save("../portfolio/caustics/caustics.png");
+    vor1.save("../portfolio/caustics/0_voronoi_1.png");
+    vor2.save("../portfolio/caustics/1_voronoi_2.png");
+    vor1.add(vor2).save("../portfolio/caustics/2_combined_voronoi.png");
+    caustiques_bw.save("../portfolio/caustics/3_increased_contrast.png");
+    gradient(gradient_tester(), thresholds, colors).save("../portfolio/caustics/4_colors.png");
+    grad.save("../portfolio/caustics/5_caustics.png");
 }
 
 
@@ -74,10 +74,10 @@ void giraffe() {
             }
         }
     }
-    vor1.save("../portfolio/giraffe/voronoi.png");
-    color_cut(vor1, thresholds, colors).save("../portfolio/giraffe/giraffe_base.png");
-    grad.save("../portfolio/giraffe/giraffe.png");
-    grad.save("../portfolio/giraffe/giraffe.png");
+    vor1.save("../portfolio/giraffe/0_voronoi.png");
+    color_cut(vor1, thresholds, colors).save("../portfolio/giraffe/1_giraffe_base.png");
+    per.save("../portfolio/giraffe/2_perlin.png");
+    grad.save("../portfolio/giraffe/3_giraffe.png");
 }
 
 
@@ -113,11 +113,11 @@ void game_map() {
     };
     Color_Image cut = color_cut(per, thresholds, colors);
     Color_Image cut_lavender = color_cut(per, thresholds, colors_biome_lavender);
-    cut.save("../portfolio/basic_map/final_base.png");
-    cut_lavender.save("../portfolio/basic_map/final_lavender.png");
-    per.save("../portfolio/basic_map/base_perlin.png");
-    color_cut(gradient_tester(), thresholds, colors).save("../portfolio/basic_map/base_colors.png");
-    color_cut(gradient_tester(), thresholds, colors_biome_lavender).save("../portfolio/basic_map/lavender_colors.png");
+    cut.save("../portfolio/basic_map/2_final_base.png");
+    cut_lavender.save("../portfolio/basic_map/4_final_lavender.png");
+    per.save("../portfolio/basic_map/0_base_perlin.png");
+    color_cut(gradient_tester(), thresholds, colors).save("../portfolio/basic_map/1_base_colors.png");
+    color_cut(gradient_tester(), thresholds, colors_biome_lavender).save("../portfolio/basic_map/3_lavender_colors.png");
 }
 
 void fire() {
@@ -283,7 +283,7 @@ void colored_map() {
         for (int x = 0; x < width; x++) {
             if (riv[y * width + x] != 0) {
                 for (int i = 0; i < all_color_rivers.size(); i++) {
-                    float blend_factor = 0.6;
+                    float blend_factor = 0.8;
                     Color3 river_color = all_color_rivers[i];
                     full_images[i].set_color(x, y, full_images[i].get_color(x,y) * (1 - blend_factor) + river_color * blend_factor);
                 }
@@ -299,6 +299,7 @@ void colored_map() {
     int nb_biome = full_images.size();
     Color_Image dithered = Color_Image(width, height);
     Color_Image smooth = Color_Image(width, height);
+    Color_Image nearest_cut = Color_Image(width, height);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             NClosest close = v.get_n_closest(x, y, nb_neighbours);
@@ -326,6 +327,8 @@ void colored_map() {
             }
             Color3 color = Color3(curr_r / tot_weight, curr_g / tot_weight, curr_b / tot_weight);
             smooth.set_color(x, y, color);
+            int closest_label = (std::hash<int>()(close.labels[0] + std::hash<int>()(SEED))) % nb_biome;
+            nearest_cut.set_color(x,y, full_images[closest_label].get_color(x, y));
         }
     }
 
@@ -334,12 +337,13 @@ void colored_map() {
         color_cut(gradient_tester(), thresholds, all_color_biomes[i]).save(path.c_str());
     }
 
-    riv.save("../portfolio/colored_map/rivers.png");
-    v.get_closest_distance_map().save("../portfolio/colored_map/voronoi_noise.png");
-    v.get_closest_label_map(full_images.size()).save("../portfolio/colored_map/voronoi_labels.png");
-    per.save("../portfolio/colored_map/perlin_noise.png");
+    riv.save("../portfolio/colored_map/1_rivers.png");
+    v.get_closest_distance_map().save("../portfolio/colored_map/2_voronoi_noise.png");
+    v.get_closest_label_map(full_images.size()).save("../portfolio/colored_map/3_voronoi_labels.png");
+    per.save("../portfolio/colored_map/0_perlin_noise.png");
 
-    dithered.save("../portfolio/colored_map/ditherd.png");
-    smooth.save("../portfolio/colored_map/smooth.png");
+    dithered.save("../portfolio/colored_map/6_ditherd.png");
+    smooth.save("../portfolio/colored_map/5_smooth.png");
+    nearest_cut.save("../portfolio/colored_map/4_nearest_cut.png");
     return;
 }

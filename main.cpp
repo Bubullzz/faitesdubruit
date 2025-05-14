@@ -8,6 +8,6 @@
 
 
 int main() {
-    giraffe();
+    colored_map();
 }
 

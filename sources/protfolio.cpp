@@ -26,7 +26,12 @@ void caustics() {
         Color3::fromHex("#006dd5"), Color3::fromHex("#006dd5"), Color3::fromHex("ffffff"), Color3::fromHex("ffffff")
     };
     Color_Image grad = gradient(caustiques_bw, thresholds, colors);
-    grad.save("../portfolio/caustics.png");
+    vor1.save("../portfolio/caustics/voronoi_1.png");
+    vor2.save("../portfolio/caustics/voronoi_2.png");
+    vor1.add(vor2).save("../portfolio/caustics/combined_voronoi.png");
+    caustiques_bw.save("../portfolio/caustics/increased_contrast.png");
+    gradient(gradient_tester(), thresholds, colors).save("../portfolio/caustics/colors.png");
+    grad.save("../portfolio/caustics/caustics.png");
 }
 
 
@@ -69,7 +74,10 @@ void giraffe() {
             }
         }
     }
-    grad.save("../giraffe.png");
+    vor1.save("../portfolio/giraffe/voronoi.png");
+    color_cut(vor1, thresholds, colors).save("../portfolio/giraffe/giraffe_base.png");
+    grad.save("../portfolio/giraffe/giraffe.png");
+    grad.save("../portfolio/giraffe/giraffe.png");
 }
 
 
@@ -108,6 +116,8 @@ void game_map() {
     cut.save("../portfolio/basic_map/final_base.png");
     cut_lavender.save("../portfolio/basic_map/final_lavender.png");
     per.save("../portfolio/basic_map/base_perlin.png");
+    color_cut(gradient_tester(), thresholds, colors).save("../portfolio/basic_map/base_colors.png");
+    color_cut(gradient_tester(), thresholds, colors_biome_lavender).save("../portfolio/basic_map/lavender_colors.png");
 }
 
 void fire() {

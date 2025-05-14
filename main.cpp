@@ -8,7 +8,6 @@
 
 
 int main() {
-    gradient_tester().save("../jsp.png");
-    colored_map();
+    giraffe();
 }
 

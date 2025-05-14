@@ -108,3 +108,15 @@ BW_Image BW_Image::apply_fun(std::function<unsigned char(unsigned char)> func) {
         result.image[i] = func(this->image[i]);
     return result;
 }
+
+BW_Image gradient_tester()
+{
+    BW_Image im = BW_Image(256, 128);
+
+    for (int x = 0; x < 128; x++) {
+        for (int y = 0; y < 256; y++) {
+            im[x * 256 + y] = y;
+        }
+    }
+    return im;
+}

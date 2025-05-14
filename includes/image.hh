@@ -79,3 +79,6 @@ public:
         return Color3(image.get()[3 * pos], image.get()[3 * pos + 1], image.get()[3 * pos + 2]);
     }
 };
+
+BW_Image gradient_tester();
+

@@ -173,7 +173,7 @@ unsigned char Voronoi::get_closest_label(const int x, const int y) const {
             float dist = curr_point.distance(neigh_actual);
             if (dist < min_distance) {
                 min_distance = dist;
-                unsigned char label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7) * SEED)) * 0.5 + 0.5) * 255.);
+                label = (unsigned char)((std::sin(offset.dot(Vec2(127.1, 311.7) * SEED)) * 0.5 + 0.5) * 255.);
             }
         }
     }
@@ -267,7 +267,7 @@ BW_Image Voronoi::get_closest_label_map(const int modulo_label) const {
     BW_Image im = BW_Image(base_width, base_height);
     for (int y = 0; y < base_height; y++) {
         for (int x = 0; x < base_width; x++) {
-            im[y * base_width + x] = (get_closest_label(x, y) % modulo_label) * 255 / modulo_label;
+            im[y * base_width + x] = (get_closest_label(x, y) % modulo_label) * (255. / modulo_label);
         }
     }
     return im;

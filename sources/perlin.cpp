@@ -17,70 +17,6 @@ Vec2 generate_gradient(int X, int Y, int seed) {
     return Vec2(grad.first, grad.second);
 }
 
-// Simplification of the origin 2002 algorithm for 2D perlin noise
-double noise_grad(int hash, float x, float y) {
-    int dir = hash % 8; // gradient has 8 possible directions
-    // The number that represents the direction is not important
-    // We just need to ensure that all directions are described in the switch below
-
-    switch (dir) {
-        case 0:
-            return x;
-        case 1:
-            return -x;
-        case 2:
-            return y;
-        case 3:
-            return -y;
-        case 4:
-            return x + y;
-        case 5:
-            return -x + y;
-        case 6:
-            return x - y;
-        case 7:
-            return -x - y;
-        default:
-            return 0; // for compiler
-    }
-}
-
-// Revisited from the original implementation
-// https://mrl.cs.nyu.edu/~perlu/noise
-// I took some logic from the naive Perlin implementation
-float upgraded_perlin_noise(float x, float y, std::vector<int> ptable) {
-    int X = static_cast<int>(std::floor(x));
-    int Y = static_cast<int>(std::floor(y));
-
-    float x_unit = x - static_cast<float>(X);
-    float y_unit = y - static_cast<float>(Y);
-
-    float distLeft = x_unit;
-    float distBottom = y_unit;
-    float distRight = x_unit - 1; // x - (X + 1)
-    float distTop = y_unit - 1; // y - (Y + 1)
-
-    int hashBottomLeft = ptable[(ptable[X % 256] + Y) % 256];
-    int hashBottomRight = ptable[(ptable[(X + 1) % 256] + Y) % 256];
-    int hashTopLeft = ptable[(ptable[X % 256] + Y + 1) % 256];
-    int hashTopRight = ptable[(ptable[(X + 1) % 256] + Y + 1) % 256];
-
-    // Instead of generating random gradient, we will use
-    // some predefined gradient (using hashes) for smoothness and less noise (more coherent)
-    // This method is good for coherent look of some textures
-
-    float gradBottomLeft = noise_grad(hashBottomLeft, distLeft, distBottom);
-    float gradBottomRight = noise_grad(hashBottomRight, distRight, distBottom);
-    float gradTopLeft = noise_grad(hashTopLeft, distLeft, distTop);
-    float gradTopRight = noise_grad(hashTopRight, distRight, distTop);
-
-    double i1 = lerp(gradBottomLeft, gradBottomRight, fade(x_unit));
-    double i2 = lerp(gradTopLeft, gradTopRight, fade(x_unit));
-
-    // Final smoothing
-    return lerp(i1, i2, fade(y_unit));
-}
-
 float perlin_noise(float x, float y, int seed) {
     int X = static_cast<int>(std::floor(x));
     int Y = static_cast<int>(std::floor(y));
@@ -137,7 +73,6 @@ BW_Image perlin(int width, int height, float frequency, float amplitude, int oct
     std::default_random_engine generator(seed);
     std::shuffle(p.begin(), p.end(), generator);
 
-    // Bretzel_ — 16:30
     BW_Image image = BW_Image(width, height);
     std::vector<float> noise_got;
     for (int y = 0; y < height; y++) {

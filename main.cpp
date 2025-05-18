@@ -8,6 +8,6 @@
 
 
 int main() {
-    colored_map();
+    fire();
 }
 

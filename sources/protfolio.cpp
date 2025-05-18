@@ -45,7 +45,6 @@ void giraffe() {
     float detail = 0.2;
     BW_Image vor1 = voronoi_edges(width, height, 25, 25);
     BW_Image per = perlin(width, height, 0.05, 1.0, 4, 0.6, SEED);
-    per.save("../perlin.png");
     std::vector<float> skin_normalized;
 
     for (int i = 0; i < width * height; i++) {
@@ -153,6 +152,9 @@ void fire() {
         Color3::fromHex("FFFFFF"),
     };
 
+    std::string path = "../portfolio/fire/palette.png";
+    color_cut(gradient_tester(), thresholds, colors).save(path.c_str());
+
     float min_value = INFINITY;
     float max_value = -INFINITY;
 
@@ -198,7 +200,7 @@ void fire() {
     }
     Color_Image cut = gradient(image, thresholds, colors);
 
-    cut.save("../fire.png");
+    cut.save("../portfolio/fire/fire.png");
 }
 
 void colored_map() {

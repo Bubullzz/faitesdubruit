@@ -65,14 +65,6 @@ float perlin_octave(int x, int y, float frequency, float amplitude, int octaves,
 
 
 BW_Image perlin(int width, int height, float frequency, float amplitude, int octaves, float persistence, int seed) {
-    std::vector<int> p;
-    p.resize(256);
-    for (int i = 0; i < 256; i++) {
-        p[i] = i;
-    }
-    std::default_random_engine generator(seed);
-    std::shuffle(p.begin(), p.end(), generator);
-
     BW_Image image = BW_Image(width, height);
     std::vector<float> noise_got;
     for (int y = 0; y < height; y++) {
@@ -116,23 +108,23 @@ std::vector<std::pair<int, int> > find_peaks(BW_Image height_map, int max_peaks,
 }
 
 void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image variation, float wobbly,
-                 int height_threshold, int river_id, std::pair<int, int> last_point, int depth = 0) {
+                 int height_threshold, int river_id, std::pair<int, int> last_river_point, int depth = 0) {
 
     // Panic exit after too many recursion
     // Can happen if river is stuck in a circle loop
     if (depth == 100) {
       return;
     }
-    std::pair<int, int> down_direction = last_point;
+    std::pair<int, int> neighbor_down = last_river_point;
     int width = height_map.width;
     int height = height_map.height;
 
     // Avoid river on border
-    if (last_point.first < 0 || last_point.second < 0 || last_point.first >= width - 1 || last_point.second >= height - 1) {
+    if (last_river_point.first < 0 || last_river_point.second < 0 || last_river_point.first >= width - 1 || last_river_point.second >= height - 1) {
         return;
     }
 
-    int current_index = last_point.second * width + last_point.first;
+    int current_index = last_river_point.second * width + last_river_point.first;
 
     // Merge two rivers from different ids
     if (river_image[current_index] != 0 && river_image[current_index] != river_id) {
@@ -153,8 +145,8 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
                 continue;
             }
 
-            int dx = last_point.first + x;
-            int dy = last_point.second + y;
+            int dx = last_river_point.first + x;
+            int dy = last_river_point.second + y;
 
             if (dx < 0 || dy < 0 || dx >= width || dy >= height) {
                 continue;
@@ -163,47 +155,49 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
             int neighbor_height = height_map[dy * width + dx];
             if (neighbor_height < min_height) {
                 min_height = neighbor_height;
-                down_direction = {dx, dy};
+                neighbor_down = {dx, dy};
             }
         }
     }
 
     // River did not move (first check to avoid atan2 impossible value)
-    if (down_direction == last_point) {
+    if (neighbor_down == last_river_point) {
         return;
     }
 
-    float noise = static_cast<float>(variation[down_direction.second * width + down_direction.first]) / 255.0f;
+    int neighbor_down_x = neighbor_down.first;
+    int neighbor_down_y = neighbor_down.second;
+    int last_river_point_x = last_river_point.first;
+    int last_river_point_y = last_river_point.second;
+
+    float noise = static_cast<float>(variation[neighbor_down_y * width + neighbor_down_x]) / 255.0f;
     float noised_angle = noise * 2.0 * M_PI;
 
-    int down_x = down_direction.first - last_point.first;
-    int down_y = down_direction.second - last_point.second;
+    int down_direction_x = neighbor_down_x - last_river_point_x;
+    int down_direction_y = neighbor_down_y - last_river_point_y;
 
     // Angle from direction
-    float direction_angle = std::atan2(down_y, down_x);
-
-    float bias = static_cast<float>(rand()) / RAND_MAX * 0.1f - 0.05f;
-    float biased_noised_angle = noised_angle + bias;
+    float direction_angle = std::atan2(down_direction_y, down_direction_x);
 
     // Give directions (vector x and y perturbated)
-    float mix_dir_x = std::cos(direction_angle) * (1.0f - wobbly) + std::cos(biased_noised_angle) * wobbly;
-    float mix_dir_y = std::sin(direction_angle) * (1.0f - wobbly) + std::sin(biased_noised_angle) * wobbly;
+    float mix_angle_x = std::cos(direction_angle) * (1.0f - wobbly) + std::cos(noised_angle) * wobbly;
+    float mix_angle_y = std::sin(direction_angle) * (1.0f - wobbly) + std::sin(noised_angle) * wobbly;
 
-    int angle_x = static_cast<int>(std::round(mix_dir_x));
-    int angle_y = static_cast<int>(std::round(mix_dir_y));
+    int angle_x = static_cast<int>(std::round(mix_angle_x));
+    int angle_y = static_cast<int>(std::round(mix_angle_y));
 
-    down_direction = {down_direction.first + angle_x, down_direction.second + angle_y};
+    neighbor_down = {neighbor_down_x + angle_x, neighbor_down_y + angle_y};
 
     // River did not move at all
-    if (down_direction == last_point) {
+    if (neighbor_down == last_river_point) {
         return;
     }
 
     // Triple draw
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
-            int nx = down_direction.first + x;
-            int ny = down_direction.second + y;
+            int nx = neighbor_down.first + x;
+            int ny = neighbor_down.second + y;
 
             if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
                 river_image[ny * width + nx] = river_id;
@@ -211,7 +205,7 @@ void make_rivers(const BW_Image height_map, BW_Image river_image, const BW_Image
         }
     }
 
-    return make_rivers(height_map, river_image, variation, wobbly, height_threshold, river_id, down_direction, depth + 1);
+    return make_rivers(height_map, river_image, variation, wobbly, height_threshold, river_id, neighbor_down, depth + 1);
 }
 
 BW_Image worm_perlin(const BW_Image height_image, int max_points, float wobblyness,

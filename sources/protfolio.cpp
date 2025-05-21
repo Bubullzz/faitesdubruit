@@ -129,12 +129,15 @@ void fire() {
     int height = 512;
     BW_Image image = BW_Image(width, height);
 
+    BW_Image perlin_base = BW_Image(width, height);
+    BW_Image perlin_flicker = BW_Image(width, height);
+
     float fade_strength = 2.0f;
     float warped_strength = 3.0f;
     float flicker_strength = 1.2f;
     float flicker_intensity = 0.5f;
 
-    float _warped_strength = warped_strength / 10.0f;
+    float oscilation_strength = warped_strength / 10.0f;
 
     std::vector<unsigned char> thresholds = {0, 20, 40, 60, 80, 100, 130, 150, 170, 255}; //, 70, 200, 240, 255};
 
@@ -163,20 +166,22 @@ void fire() {
         for (int x = 0; x < width; x++) {
 
             // Random fire blob movement wavy
-            int warped_x = x + warped_strength * std::cos(x * _warped_strength);
-            int warped_y = y + warped_strength * std::sin(y * _warped_strength);
+            int warped_x = x + warped_strength * std::cos(x * oscilation_strength);
+            int warped_y = y + warped_strength * std::sin(y * oscilation_strength);
 
             // Big perlin
             float perlin_noise = (perlin_octave(warped_x, warped_y, 0.02, 1.0, 2, 0.5, SEED) + 1) / 2 + 0.1f;
+            perlin_base[y * width + x] = static_cast<unsigned char>(perlin_noise * 255.0f);
 
             float fade_height = static_cast<float>(y) / height;
 
             // Random fire movement
-            int flicker_warped_x = x + std::cos(x * _warped_strength);
-            int flicker_warped_y = y + std::sin(y * _warped_strength);
+            int flicker_warped_x = x + std::cos(x * oscilation_strength);
+            int flicker_warped_y = y + std::sin(y * oscilation_strength);
 
             // Small perlin
             float flicker_noise = (perlin_octave(flicker_warped_x, flicker_warped_y, 0.1, 1.0, 5, 0.7, SEED * 3) + 1) / 2;
+            perlin_flicker[y * width + x] = static_cast<unsigned char>(flicker_strength * (flicker_noise - flicker_intensity) * 255.0f);
 
             // Small fire texture granularity
             perlin_noise += flicker_strength * (flicker_noise - flicker_intensity);
@@ -200,7 +205,10 @@ void fire() {
     }
     Color_Image cut = gradient(image, thresholds, colors);
 
+    image.save("../portfolio/fire/0_fire.png");
     cut.save("../portfolio/fire/fire.png");
+    perlin_base.save("../portfolio/fire/perlin_base.png");
+    perlin_flicker.save("../portfolio/fire/perlin_flicker.png");
 }
 
 void colored_map() {
